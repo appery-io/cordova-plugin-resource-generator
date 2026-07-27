@@ -9,15 +9,19 @@ const LAUNCH_SPLASH_SIZE = 2732;
 /** Icon side length on the generated splash canvas (~37% of 2732). */
 const SPLASH_ICON_TARGET = 1024;
 
-const SIMPLE_ICON_CANDIDATES = [
+/** App assets preferred over default resources/icon.png (Appery template). */
+const PREFERRED_ICON_CANDIDATES = [
+  'src/assets/icon/favicon.png',
+  'www/assets/icon/favicon.png',
+  'src/assets/icon/icon.png',
+  'src/assets/images/icon.png',
+  'www/assets/icon/icon.png',
+];
+
+const FALLBACK_ICON_CANDIDATES = [
   'resources/icon.jpg',
   'resources/ios/icon.png',
   'resources/android/icon.png',
-  'src/assets/icon/icon.png',
-  'src/assets/images/icon.png',
-  'src/assets/icon/favicon.png',
-  'www/assets/icon/icon.png',
-  'www/assets/icon/favicon.png',
 ];
 
 module.exports = {
@@ -103,20 +107,28 @@ function restoreFiles(srcDir, destDir, fileExtension) {
 }
 
 /**
- * If resources/icon.png (Launch Icon) is missing, generate it from a regular icon.
- * Returns the path to the Launch Icon to use, or null if none can be created.
+ * Resolve icon source for cordova-res.
+ * Priority: app favicon/assets → resources/icon.png → other platform fallbacks.
+ * Returns the path to use, or null if none can be created.
  */
 async function ensureLaunchIcon() {
+  const preferred = PREFERRED_ICON_CANDIDATES.find(fileExists);
+  if (preferred) {
+    console.log('Preferred icon source found: ' + preferred);
+    return preferred;
+  }
+
   if (fileExists(LAUNCH_ICON)) {
     console.log('Launch Icon found: ' + LAUNCH_ICON);
     return LAUNCH_ICON;
   }
 
-  const source = SIMPLE_ICON_CANDIDATES.find(fileExists);
+  const source = FALLBACK_ICON_CANDIDATES.find(fileExists);
   if (!source) {
     console.warn(
       'Launch Icon missing (' + LAUNCH_ICON + ') and no simple icon fallback found. ' +
-      'Looked for: ' + SIMPLE_ICON_CANDIDATES.join(', ')
+      'Looked for: ' +
+      PREFERRED_ICON_CANDIDATES.concat(FALLBACK_ICON_CANDIDATES).join(', ')
     );
     return null;
   }
