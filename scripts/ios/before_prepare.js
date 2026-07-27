@@ -37,14 +37,20 @@ async function generateIosResources() {
 
   let tmpDir;
   try {
-    // Preserve any hand-crafted platform resources across cordova-res output
-    tmpDir = utils.saveFiles('resources/ios/icon', '.png');
-    utils.saveFiles('resources/ios/splash', '.png', tmpDir);
+    const preferAppIcon = utils.hasPreferredIcon();
+    // When regenerating from favicon, do not restore old platform assets —
+    // restore would undo cordova-res output.
+    if (!preferAppIcon) {
+      tmpDir = utils.saveFiles('resources/ios/icon', '.png');
+      utils.saveFiles('resources/ios/splash', '.png', tmpDir);
+    }
 
     await run(options);
 
-    utils.restoreFiles(tmpDir, 'resources/ios/icon', '.png');
-    utils.restoreFiles(tmpDir, 'resources/ios/splash', '.png');
+    if (!preferAppIcon && tmpDir) {
+      utils.restoreFiles(tmpDir, 'resources/ios/icon', '.png');
+      utils.restoreFiles(tmpDir, 'resources/ios/splash', '.png');
+    }
     console.log('iOS resources generation finished');
   } finally {
     try {
