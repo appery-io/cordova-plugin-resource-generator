@@ -8,16 +8,9 @@ module.exports = function () {
 async function generateAndroidResources() {
   console.log('Generating icons and splashscreens for Android');
 
-  // Same Launch Icon fallback as iOS: generate resources/icon.png from a simple icon if missing
+  // Same Launch Icon / splash fallback as iOS (favicon preferred over defaults)
   const launchIcon = await utils.ensureLaunchIcon();
-
-  // Prefer explicit splash; if missing, reuse iOS helper so Android also gets a source
-  let splashSource = utils.fileExists(utils.LAUNCH_SPLASH)
-    ? utils.LAUNCH_SPLASH
-    : null;
-  if (!splashSource) {
-    splashSource = await utils.ensureIosLaunchScreen(launchIcon);
-  }
+  const splashSource = await utils.ensureIosLaunchScreen(launchIcon);
 
   const androidPlatform = {};
   if (launchIcon) {
@@ -45,13 +38,18 @@ async function generateAndroidResources() {
 
   let tmpDir;
   try {
-    tmpDir = utils.saveFiles('resources/android/icon', '.png');
-    utils.saveFiles('resources/android/splash', '.png', tmpDir);
+    const preferAppIcon = utils.hasPreferredIcon();
+    if (!preferAppIcon) {
+      tmpDir = utils.saveFiles('resources/android/icon', '.png');
+      utils.saveFiles('resources/android/splash', '.png', tmpDir);
+    }
 
     await run(options);
 
-    utils.restoreFiles(tmpDir, 'resources/android/icon', '.png');
-    utils.restoreFiles(tmpDir, 'resources/android/splash', '.png');
+    if (!preferAppIcon && tmpDir) {
+      utils.restoreFiles(tmpDir, 'resources/android/icon', '.png');
+      utils.restoreFiles(tmpDir, 'resources/android/splash', '.png');
+    }
     console.log('Android resources generation finished');
   } finally {
     try {
