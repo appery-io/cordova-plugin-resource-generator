@@ -1,67 +1,37 @@
+const fs = require('fs');
 const run = require('cordova-res');
 const utils = require('../utils.js');
 
-module.exports = function () {
-  return generateIosResources();
-};
+console.log('Generating icons and splashscreens for iOS');
 
-async function generateIosResources() {
-  console.log('Generating icons and splashscreens for iOS');
-
-  const launchIcon = await utils.ensureLaunchIcon();
-  const launchSplash = await utils.ensureIosLaunchScreen(launchIcon);
-
-  const iosPlatform = {};
-  if (launchIcon) {
-    iosPlatform.icon = { sources: [launchIcon] };
-  } else {
-    console.warn('Skipping iOS icon generation: no Launch Icon source.');
+var options = {
+  platforms: {
+    ios: {
+      icon: { sources: ['resources/icon.png'] },
+      splash: { sources: ['resources/splash.png'] }
+    }
   }
+}
 
-  if (launchSplash) {
-    iosPlatform.splash = { sources: [launchSplash] };
-  } else {
-    console.warn('Skipping iOS splash generation: no launch screen source.');
-  }
-
-  if (!iosPlatform.icon && !iosPlatform.splash) {
-    console.warn('Nothing to generate for iOS — missing Launch Icon and launch screen.');
-    return;
-  }
-
-  const options = {
-    platforms: {
-      ios: iosPlatform,
-    },
-  };
-
-  let tmpDir;
+let tmpDir;
+try {
+  // Save existing resources
+  tmpDir = utils.saveFiles("resources/ios/icon", ".png");
+  utils.saveFiles("resources/ios/splash", ".png", tmpDir);
+  
+  run(options).then(function() {
+      // Restore saved resources
+      utils.restoreFiles(tmpDir, "resources/ios/icon", ".png");
+      utils.restoreFiles(tmpDir, "resources/ios/splash", ".png");
+    });
+}
+finally {
   try {
-    const preferAppIcon = utils.hasPreferredIcon();
-    // When regenerating from favicon, do not restore old platform assets —
-    // restore would undo cordova-res output.
-    if (!preferAppIcon) {
-      tmpDir = utils.saveFiles('resources/ios/icon', '.png');
-      utils.saveFiles('resources/ios/splash', '.png', tmpDir);
+    if (tmpDir) {
+      //FIXME fs.rmSync(tmpDir, { recursive: true });
     }
-
-    await run(options);
-
-    if (!preferAppIcon && tmpDir) {
-      utils.restoreFiles(tmpDir, 'resources/ios/icon', '.png');
-      utils.restoreFiles(tmpDir, 'resources/ios/splash', '.png');
-    }
-    console.log('iOS resources generation finished');
-  } finally {
-    try {
-      if (tmpDir) {
-        // Keep temp dir for debugging; cordova-res may still need files briefly.
-        // fs.rmSync(tmpDir, { recursive: true });
-      }
-    } catch (e) {
-      console.error(
-        `An error has occurred while removing the temp folder at ${tmpDir}. Please remove it manually. Error: ${e}`
-      );
-    }
+  }
+  catch (e) {
+    console.error(`An error has occurred while removing the temp folder at ${tmpDir}. Please remove it manually. Error: ${e}`);
   }
 }
