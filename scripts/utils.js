@@ -31,9 +31,14 @@ module.exports = {
   resolveSharp,
   ensureLaunchIcon,
   ensureIosLaunchScreen,
+  hasPreferredIcon,
   LAUNCH_ICON,
   LAUNCH_SPLASH,
 };
+
+function hasPreferredIcon() {
+  return !!PREFERRED_ICON_CANDIDATES.find(fileExists);
+}
 
 function fileExists(filePath) {
   try {
@@ -150,22 +155,29 @@ async function ensureLaunchIcon() {
 }
 
 /**
- * If iOS launch screen source is missing, generate resources/splash.png from Launch Icon.
+ * Resolve splash source for cordova-res.
+ * Priority: generate from preferred app icon (favicon) → existing splash → generate from Launch Icon.
  * Returns splash path to use, or null if it cannot be created.
  */
 async function ensureIosLaunchScreen(launchIconPath) {
+  const preferredIcon = PREFERRED_ICON_CANDIDATES.find(fileExists);
+  const iconPath = launchIconPath && fileExists(launchIconPath)
+    ? launchIconPath
+    : (preferredIcon || (fileExists(LAUNCH_ICON) ? LAUNCH_ICON : null));
+
+  // App favicon/assets win over default Appery resources/splash.png
+  if (preferredIcon && iconPath) {
+    return generateSplashFromIcon(iconPath);
+  }
+
   const existingSplash =
     [LAUNCH_SPLASH, 'resources/ios/splash.png', 'resources/splash.jpg']
       .find(fileExists) || null;
 
   if (existingSplash) {
     console.log('iOS launch screen source found: ' + existingSplash);
-    return existingSplash === LAUNCH_SPLASH ? LAUNCH_SPLASH : existingSplash;
+    return existingSplash;
   }
-
-  const iconPath = launchIconPath && fileExists(launchIconPath)
-    ? launchIconPath
-    : (fileExists(LAUNCH_ICON) ? LAUNCH_ICON : null);
 
   if (!iconPath) {
     console.warn(
@@ -174,9 +186,11 @@ async function ensureIosLaunchScreen(launchIconPath) {
     return null;
   }
 
-  console.log(
-    'iOS launch screen missing — generating ' + LAUNCH_SPLASH + ' from Launch Icon: ' + iconPath
-  );
+  return generateSplashFromIcon(iconPath);
+}
+
+async function generateSplashFromIcon(iconPath) {
+  console.log('Generating ' + LAUNCH_SPLASH + ' from icon: ' + iconPath);
 
   const sharp = resolveSharp();
   fs.mkdirSync(path.dirname(LAUNCH_SPLASH), { recursive: true });
@@ -204,6 +218,6 @@ async function ensureIosLaunchScreen(launchIconPath) {
     .png()
     .toFile(LAUNCH_SPLASH);
 
-  console.log('Generated iOS launch screen: ' + LAUNCH_SPLASH);
+  console.log('Generated launch screen: ' + LAUNCH_SPLASH);
   return LAUNCH_SPLASH;
 }
