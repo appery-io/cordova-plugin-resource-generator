@@ -1,37 +1,24 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <plugin xmlns="http://www.phonegap.com/ns/plugins/1.0"
-        xmlns:android="http://schemas.android.com/apk/res/android"
-        id="cordova-plugin-resource-generator"
-        version="0.2.0">
+  xmlns:android="http://schemas.android.com/apk/res/android"
+  id="cordova-plugin-resource-generator"
+  version="0.1.0">
 
   <name>Appery.io Resource Generator</name>
 
   <description>
-    Generates missing Cordova icons and splash screens before the platform is prepared.
-    Existing image files and config.xml are left untouched.
+    This plugin uses cordova-res to generate icons and splashscreens
   </description>
 
   <engines>
     <engine name="cordova" version=">=3.0.0" />
   </engines>
 
-  <!--
-    platform add prepares native projects before before_prepare and before plugins
-    from this add are installed. before_platform_add runs first, but only when this
-    plugin is already present in plugins/. before_prepare covers later builds.
-    Both hooks must return a promise; Cordova does not wait for work started at
-    require-time.
-  -->
-  <hook type="before_platform_add" src="scripts/generate-resources.js" />
-  <hook type="before_prepare" src="scripts/generate-resources.js" />
-
   <platform name="android">
-    <hook type="before_platform_add" src="scripts/android/before_prepare.js" />
     <hook type="before_prepare" src="scripts/android/before_prepare.js" />
   </platform>
 
   <platform name="ios">
-    <hook type="before_platform_add" src="scripts/ios/before_prepare.js" />
     <hook type="before_prepare" src="scripts/ios/before_prepare.js" />
   </platform>
 
