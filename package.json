@@ -1,7 +1,10 @@
 {
   "name": "cordova-plugin-resource-generator",
-  "version": "0.1.0",
-  "description": "This plugin uses cordova-res to generate icons and splashscreens",
+  "version": "0.2.0",
+  "description": "Generates missing Cordova icons and splash screens from resources/icon.png without overwriting existing files",
+  "scripts": {
+    "postinstall": "node scripts/generate-resources.js"
+  },
   "cordova": {
     "id": "cordova-plugin-resource-generator",
     "platforms": [
@@ -28,8 +31,7 @@
     }
   ],
   "dependencies": {
-    "cordova-res": "0.15.4",
-	"simple-swizzle": "0.2.2"
+    "sharp": "0.33.5"
   },
   "author": "Andrii Iakovenko",
   "license": "MIT",
